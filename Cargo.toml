@@ -1,0 +1,7 @@
+[package]
+name = "tt-cli"
+version = "0.1.0"
+authors = ["XX <freecoder.xx@gmail.com>"]
+
+[dependencies]
+clap = "2.32"
