@@ -87,5 +87,7 @@ fn main() {
         processor.start(matches);
     } else if let Some(matches) = matches.subcommand_matches(Cmd::STOP.name) {
         processor.stop(matches);
+    } else if let Some(matches) = matches.subcommand_matches(Cmd::RESTART.name) {
+        processor.restart(matches);
     }
 }

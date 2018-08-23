@@ -136,6 +136,26 @@ impl CmdProcessor {
         }
     }
 
+    pub fn restart(&mut self, matches: &ArgMatches) {
+        let offset = Self::get_offset(matches);
+        let note = Self::get_note(matches);
+        let error_message = format!("Can't update last record in journal {:?}", self.journal.path());
+        let print = self.print;
+
+        if !self.journal.update(&[], Some(offset), |mut record| {
+            if let Some(note) = note {
+                record.note = note;
+            }
+            record.set_correction_to_now();
+            if print {
+                println!("{}", record.to_string());
+            }
+            Some(record)
+        }).expect(&error_message) {
+            panic!(error_message);
+        }
+    }
+
     fn get_offset(matches: &ArgMatches) -> i32 {
         matches.args
             .get(Cmd::OFFSET.name)
