@@ -8,11 +8,9 @@ extern crate tt_core;
 mod cmd;
 mod settings;
 
-use clap::{App, Arg, ArgMatches, SubCommand};
-use tt_core::record::Record;
-use tt_core::journal::{Journal, file::FileJournal};
+use clap::{App, Arg, SubCommand};
 
-use cmd::Cmd;
+use cmd::{Cmd, CmdProcessor};
 use settings::Settings;
 
 const VERSION: &'static str = "0.1.0"; // Related with `version` value in Cargo.toml
@@ -84,61 +82,10 @@ fn main() {
                     .help(Cmd::CORRECTION.desc))))
         .get_matches();
 
-    let mut journal = FileJournal::new(&settings.journal_file);
+    let mut processor = CmdProcessor::new(&settings);
     if let Some(matches) = matches.subcommand_matches(Cmd::START.name) {
-        let mut record = Record::now();
-        if let Some(note) = get_note(matches) {
-            record.note = note;
-        }
-        journal.add(&record)
-            .expect(&format!("Can't add new record to journal {:?}", journal.path()));
-        if settings.print {
-            println!("{}", record.to_string());
-        }
+        processor.start(matches);
     } else if let Some(matches) = matches.subcommand_matches(Cmd::STOP.name) {
-        let offset = get_offset(matches);
-        let note = get_note(matches);
-        let error_message = format!("Can't update last record in journal {:?}", journal.path());
-        if !journal.update(&[], Some(offset), |mut record| {
-            if let Some(note) = note {
-                record.note = note;
-            }
-            record.set_duration_to_now();
-            if settings.print {
-                println!("{}", record.to_string());
-            }
-            Some(record)
-        }).expect(&error_message) {
-            panic!(error_message);
-        }
+        processor.stop(matches);
     }
-}
-
-fn get_offset(matches: &ArgMatches) -> i32 {
-    matches.args
-        .get(Cmd::OFFSET.name)
-        .map(|arg|
-            arg.vals[0]
-                .clone()
-                .into_string()
-                .expect(&format!("Can't convert offset {:?} to UTF-8 string", arg.vals[0]))
-                .parse::<i32>()
-                .map(|n| -n - 1)
-                .expect(&format!("Can't convert offset {:?} to i32 number", arg.vals[0]))
-        )
-        .unwrap_or(-1)
-}
-
-fn get_note(matches: &ArgMatches) -> Option<String> {
-    matches.args
-        .get(Cmd::NOTE.upcase_name)
-        .map(|arg|
-            arg.vals
-                .iter()
-                .map(|val|
-                    val.clone().into_string().expect(&format!("Can't convert note {:?} to UTF-8 string", arg.vals))
-                )
-                .collect::<Vec<_>>()
-                .join(" ")
-        )
 }
