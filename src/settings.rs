@@ -4,12 +4,14 @@ use config::{Config, ConfigError, Environment, File};
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Settings {
     pub journal_file: String,
+    pub print: bool,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Settings {
             journal_file: "journal.txt".to_string(),
+            print: true,
         }
     }
 }

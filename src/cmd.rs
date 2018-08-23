@@ -26,6 +26,13 @@ impl Cmd {
         desc: "Stop tracking"
     };
 
+    pub const RESTART: Cmd = Cmd {
+        upcase_name: "RESTART",
+        name: "restart",
+        short: "",
+        desc: "Resume paused tracking"
+    };
+
     pub const SET: Cmd = Cmd {
         upcase_name: "SET",
         name: "set",

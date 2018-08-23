@@ -32,7 +32,7 @@ fn start_record() {
     assert!(record.start.is_some());
     let expected = format!(
         "[{},  ()] record1\n",
-        record.start.unwrap().format(Record::START_DATETIME_FORMAT).to_string()
+        record.start.unwrap().format(Record::START_DATETIME_FORMAT)
     );
     assert_content!(journal_file, expected);
 
@@ -44,8 +44,22 @@ fn start_record() {
     assert!(record2.start.is_some());
     let expected = format!(
         "[{},  ()] record1\n[{},  ()] record 2\n",
-        record.start.unwrap().format(Record::START_DATETIME_FORMAT).to_string(),
-        record2.start.unwrap().format(Record::START_DATETIME_FORMAT).to_string()
+        record.start.unwrap().format(Record::START_DATETIME_FORMAT),
+        record2.start.unwrap().format(Record::START_DATETIME_FORMAT)
+    );
+    assert_content!(journal_file, expected);
+
+    run!("tt-cli start record 3");
+
+    let record3 = journal.get(&[], Some(2))
+        .expect(&format!("Can't get record from {:?}", journal_file))
+        .expect(&format!("The record in {:?} is empty", journal_file));
+    assert!(record3.start.is_some());
+    let expected = format!(
+        "[{},  ()] record1\n[{},  ()] record 2\n[{},  ()] record 3\n",
+        record.start.unwrap().format(Record::START_DATETIME_FORMAT),
+        record2.start.unwrap().format(Record::START_DATETIME_FORMAT),
+        record3.start.unwrap().format(Record::START_DATETIME_FORMAT)
     );
     assert_content!(journal_file, expected);
 }
