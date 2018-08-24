@@ -1,4 +1,5 @@
 use std::env;
+use std::path::PathBuf;
 use config::{Config, ConfigError, Environment, File};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -26,10 +27,9 @@ impl Settings {
         config.merge(Config::try_from(&Settings::default())?)?;
 
         if let Ok(home) = env::var("TT_CLI_HOME") {
-            config.merge(
-                File::with_name(&format!("{}/{}", home, config_file_name))
-                    .required(false)
-            )?;
+            if let Some(path) = PathBuf::from(home).join(&config_file_name).to_str() {
+                config.merge(File::with_name(path).required(false))?;
+            }
         }
 
         config.merge(File::with_name(&config_file_name).required(false))?;
@@ -49,6 +49,7 @@ mod tests {
 
     #[test]
     fn settings_default() {
+        env::remove_var("TT_CLI_HOME");
         let settings = Settings::new().unwrap();
         assert_eq!("journal.txt", &settings.journal_file);
     }
