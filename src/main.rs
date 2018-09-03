@@ -47,6 +47,14 @@ fn main() {
             .arg(Arg::with_name(Cmd::NOTE.upcase_name)
                 .help(Cmd::NOTE.desc)
                 .multiple(true)))
+        .subcommand(SubCommand::with_name(Cmd::LIST.name)
+            .about(Cmd::LIST.desc)
+            .arg(Arg::with_name(Cmd::ALL.name)
+                .short(Cmd::ALL.short)
+                .long(Cmd::ALL.name)
+                .help(Cmd::ALL.desc))
+            .arg(Arg::with_name(Cmd::DATE.upcase_name)
+                .help(Cmd::DATE.desc)))
         .subcommand(SubCommand::with_name(Cmd::SET.name)
             .about(Cmd::SET.desc)
             .arg(Arg::with_name(Cmd::OFFSET.name)
@@ -89,5 +97,7 @@ fn main() {
         processor.stop(matches);
     } else if let Some(matches) = matches.subcommand_matches(Cmd::RESTART.name) {
         processor.restart(matches);
+    } else if let Some(matches) = matches.subcommand_matches(Cmd::LIST.name) {
+        processor.list(matches);
     }
 }

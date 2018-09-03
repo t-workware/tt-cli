@@ -1,6 +1,6 @@
 use clap::ArgMatches;
-use tt_core::record::Record;
-use tt_core::journal::{Journal, file::FileJournal};
+use tt_core::record::{Record, Local, Date, TimeZone};
+use tt_core::journal::{Journal, file::{FileJournal, Item}};
 use settings::Settings;
 
 #[derive(Default)]
@@ -31,6 +31,13 @@ impl Cmd {
         name: "restart",
         short: "",
         desc: "Resume paused tracking"
+    };
+
+    pub const LIST: Cmd = Cmd {
+        upcase_name: "LIST",
+        name: "list",
+        short: "",
+        desc: "List records"
     };
 
     pub const SET: Cmd = Cmd {
@@ -80,6 +87,13 @@ impl Cmd {
         name: "cor",
         short: "",
         desc: "The record correction in minutes"
+    };
+
+    pub const ALL: Cmd = Cmd {
+        upcase_name: "ALL",
+        name: "all",
+        short: "a",
+        desc: "All lines"
     };
 
     pub const OFFSET: Cmd = Cmd {
@@ -156,6 +170,38 @@ impl CmdProcessor {
         }
     }
 
+    pub fn list(&mut self, matches: &ArgMatches) {
+        let date = if !Self::is_all(matches) {
+            Self::get_date(matches).or(Some(Local::now().date()))
+        } else {
+            None
+        };
+        let error_message = format!("Can't list records from journal {:?}", self.journal.path());
+        let mut out = Vec::new();
+
+        let mut iter = self.journal.try_iter().expect(&error_message);
+        iter.go_to_end();
+        loop {
+            if let Some(item) = iter.backward(1).get() {
+                let line = match item {
+                    Item::Record(r) => {
+                        if date.is_some() && r.start.is_some() {
+                            if r.start.unwrap().date() < date.unwrap() {
+                                break;
+                            }
+                        }
+                        r.to_string()
+                    },
+                    Item::SomeLine(s) => s,
+                };
+                out.push(line);
+            } else {
+                break;
+            }
+        }
+        out.iter().rev().for_each(|line| println!("{}", line));
+    }
+
     fn get_offset(matches: &ArgMatches) -> i32 {
         matches.args
             .get(Cmd::OFFSET.name)
@@ -183,5 +229,31 @@ impl CmdProcessor {
                     .collect::<Vec<_>>()
                     .join(" ")
             )
+    }
+
+    fn get_date(matches: &ArgMatches) -> Option<Date<Local>> {
+        matches.args
+            .get(Cmd::DATE.upcase_name)
+            .map(|arg| {
+                let items: Vec<i32> = arg.vals[0]
+                    .clone()
+                    .into_string()
+                    .expect(&format!("Can't convert date {:?} to UTF-8 string", arg.vals[0]))
+                    .split('-')
+                    .map(|s| s.parse().expect(&format!("Can't convert part of date {:?} to i32", s)))
+                    .collect::<Vec<i32>>();
+                if items.len() != 3 {
+                    panic!("Can't convert date {:?} to Date<Local>", arg.vals[0]);
+                }
+                Local.ymd(items[0], items[1] as u32, items[2] as u32)
+            })
+    }
+
+    fn is_all(matches: &ArgMatches) -> bool {
+        if matches.occurrences_of(Cmd::ALL.name) > 0 {
+            true
+        } else {
+            false
+        }
     }
 }
