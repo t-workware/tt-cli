@@ -1,5 +1,5 @@
 use clap::ArgMatches;
-use tt_core::record::{Record, Local, Date, TimeZone};
+use tt_core::record::{Record, Local, Date, Datelike, Timelike, TimeZone};
 use tt_core::journal::{Journal, file::{FileJournal, Item}};
 use settings::Settings;
 
@@ -131,43 +131,25 @@ impl CmdProcessor {
     }
 
     pub fn stop(&mut self, matches: &ArgMatches) {
-        let offset = Self::get_offset(matches);
-        let note = Self::get_note(matches);
-        let error_message = format!("Can't update last record in journal {:?}", self.journal.path());
-        let print = self.print;
-
-        if !self.journal.update(&[], Some(offset), |mut record| {
+        self.update(matches, |mut record| {
+            let note = Self::get_note(matches);
             if let Some(note) = note {
                 record.note = note;
             }
             record.set_duration_to_now();
-            if print {
-                println!("{}", record.to_string());
-            }
-            Some(record)
-        }).expect(&error_message) {
-            panic!(error_message);
-        }
+            record
+        });
     }
 
     pub fn restart(&mut self, matches: &ArgMatches) {
-        let offset = Self::get_offset(matches);
-        let note = Self::get_note(matches);
-        let error_message = format!("Can't update last record in journal {:?}", self.journal.path());
-        let print = self.print;
-
-        if !self.journal.update(&[], Some(offset), |mut record| {
+        self.update(matches, |mut record| {
+            let note = Self::get_note(matches);
             if let Some(note) = note {
                 record.note = note;
             }
             record.set_correction_to_now();
-            if print {
-                println!("{}", record.to_string());
-            }
-            Some(record)
-        }).expect(&error_message) {
-            panic!(error_message);
-        }
+            record
+        });
     }
 
     pub fn list(&mut self, matches: &ArgMatches) {
@@ -200,6 +182,56 @@ impl CmdProcessor {
             }
         }
         out.iter().rev().for_each(|line| println!("{}", line));
+    }
+
+    pub fn set(&mut self, matches: &ArgMatches) {
+        if let Some(matches) = matches.subcommand_matches(Cmd::NOTE.name) {
+            self.set_note(matches);
+        } else if let Some(matches) = matches.subcommand_matches(Cmd::DATE.name) {
+            self.set_date(matches);
+        }
+    }
+
+    fn set_note(&mut self, matches: &ArgMatches) {
+        self.update(matches, |mut record| {
+            let note = Self::get_note(matches);
+            if let Some(note) = note {
+                record.note = note;
+            } else {
+                record.note.clear();
+            }
+            record
+        });
+    }
+
+    fn set_date(&mut self, matches: &ArgMatches) {
+        self.update(matches, |mut record| {
+            if let Some(date) = Self::get_date(matches) {
+                let hour = record.start.map(|dt| dt.hour()).unwrap_or(0);
+                let min = record.start.map(|dt| dt.minute()).unwrap_or(0);
+                let sec = record.start.map(|dt| dt.second()).unwrap_or(0);
+                record.start = Some(date.and_hms(hour, min, sec));
+            }
+            record
+        });
+    }
+
+    fn update<F>(&mut self, matches: &ArgMatches, f: F)
+        where F: FnOnce(Record) -> Record,
+    {
+        let offset = Self::get_offset(matches);
+        let error_message = format!("Can't update record in journal {:?}", self.journal.path());
+        let print = self.print;
+
+        if !self.journal.update(&[], Some(offset), |record| {
+            let record = f(record);
+            if print {
+                println!("{}", record.to_string());
+            }
+            Some(record)
+        }).expect(&error_message) {
+            panic!(error_message);
+        }
     }
 
     fn get_offset(matches: &ArgMatches) -> i32 {
@@ -235,25 +267,35 @@ impl CmdProcessor {
         matches.args
             .get(Cmd::DATE.upcase_name)
             .map(|arg| {
-                let items: Vec<i32> = arg.vals[0]
+                let mut items: Vec<i32> = arg.vals[0]
                     .clone()
                     .into_string()
                     .expect(&format!("Can't convert date {:?} to UTF-8 string", arg.vals[0]))
                     .split('-')
                     .map(|s| s.parse().expect(&format!("Can't convert part of date {:?} to i32", s)))
                     .collect::<Vec<i32>>();
-                if items.len() != 3 {
-                    panic!("Can't convert date {:?} to Date<Local>", arg.vals[0]);
+                if items.len() < 1 || items.len() > 3 {
+                    panic!("Can't convert date {:?} to DateTime<Local>", arg.vals[0]);
                 }
-                Local.ymd(items[0], items[1] as u32, items[2] as u32)
+                items.reverse();
+
+                let now = Local::now();
+                let day = items[0] as u32;
+                let month = if items.len() > 1 {
+                    items[1] as u32
+                } else {
+                    now.month()
+                };
+                let year = if items.len() > 2 {
+                    items[2]
+                } else {
+                    now.year()
+                };
+                Local.ymd(year, month, day)
             })
     }
 
     fn is_all(matches: &ArgMatches) -> bool {
-        if matches.occurrences_of(Cmd::ALL.name) > 0 {
-            true
-        } else {
-            false
-        }
+        matches.occurrences_of(Cmd::ALL.name) > 0
     }
 }

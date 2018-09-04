@@ -99,5 +99,7 @@ fn main() {
         processor.restart(matches);
     } else if let Some(matches) = matches.subcommand_matches(Cmd::LIST.name) {
         processor.list(matches);
+    } else if let Some(matches) = matches.subcommand_matches(Cmd::SET.name) {
+        processor.set(matches);
     }
 }
