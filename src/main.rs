@@ -55,6 +55,14 @@ fn main() {
                 .help(Cmd::ALL.desc))
             .arg(Arg::with_name(Cmd::DATE.upcase_name)
                 .help(Cmd::DATE.desc)))
+        .subcommand(SubCommand::with_name(Cmd::DEL.name)
+            .about(Cmd::DEL.desc)
+            .arg(Arg::with_name(Cmd::OFFSET.name)
+                .short(Cmd::OFFSET.short)
+                .long(Cmd::OFFSET.name)
+                .value_name(Cmd::OFFSET.upcase_name)
+                .help(Cmd::OFFSET.desc)
+                .takes_value(true)))
         .subcommand(SubCommand::with_name(Cmd::SET.name)
             .about(Cmd::SET.desc)
             .arg(Arg::with_name(Cmd::OFFSET.name)
@@ -80,14 +88,14 @@ fn main() {
                 .about(Cmd::DATETIME.desc)
                 .arg(Arg::with_name(Cmd::DATETIME.upcase_name)
                     .help(Cmd::DATETIME.desc)))
-            .subcommand(SubCommand::with_name(Cmd::DURATION.name)
-                .about(Cmd::DURATION.desc)
-                .arg(Arg::with_name(Cmd::DURATION.upcase_name)
-                    .help(Cmd::DURATION.desc)))
-            .subcommand(SubCommand::with_name(Cmd::CORRECTION.name)
-                .about(Cmd::CORRECTION.desc)
-                .arg(Arg::with_name(Cmd::CORRECTION.upcase_name)
-                    .help(Cmd::CORRECTION.desc))))
+            .subcommand(SubCommand::with_name(Cmd::ACTIVITY.name)
+                .about(Cmd::ACTIVITY.desc)
+                .arg(Arg::with_name(Cmd::ACTIVITY.upcase_name)
+                    .help(Cmd::ACTIVITY.desc)))
+            .subcommand(SubCommand::with_name(Cmd::REST.name)
+                .about(Cmd::REST.desc)
+                .arg(Arg::with_name(Cmd::REST.upcase_name)
+                    .help(Cmd::REST.desc))))
         .get_matches();
 
     let mut processor = CmdProcessor::new(&settings);
@@ -101,5 +109,7 @@ fn main() {
         processor.list(matches);
     } else if let Some(matches) = matches.subcommand_matches(Cmd::SET.name) {
         processor.set(matches);
+    } else if let Some(matches) = matches.subcommand_matches(Cmd::DEL.name) {
+        processor.del(matches);
     }
 }

@@ -67,7 +67,7 @@ fn stop_record() {
     let first_record = journal.get(&[], None)
         .expect(&format!("Can't get record from {:?}", journal_file))
         .expect(&format!("The record in {:?} is empty", journal_file));
-    record.duration = Some(Duration::minutes(12));
+    record.activity = Some(Duration::minutes(12));
     record.note = "record1".to_string();
     assert_eq!(record, first_record);
 }
