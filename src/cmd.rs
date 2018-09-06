@@ -214,6 +214,8 @@ impl CmdProcessor {
             self.set_date(matches, offset);
         } else if let Some(matches) = matches.subcommand_matches(Cmd::ACTIVITY.name) {
             self.set_act(matches, offset);
+        } else if let Some(matches) = matches.subcommand_matches(Cmd::REST.name) {
+            self.set_rest(matches, offset);
         }
     }
 
@@ -244,6 +246,15 @@ impl CmdProcessor {
         self.update(offset, |mut record| {
             if let Some(act) =  Self::get_act(matches) {
                 record.activity = Some(Duration::minutes(act));
+            }
+            record
+        });
+    }
+
+    fn set_rest(&mut self, matches: &ArgMatches, offset: i32) {
+        self.update(offset, |mut record| {
+            if let Some(rest) =  Self::get_rest(matches) {
+                record.rest = Some(Duration::minutes(rest));
             }
             record
         });
@@ -343,6 +354,19 @@ impl CmdProcessor {
                     .expect(&format!("Can't convert duration of activity {:?} to UTF-8 string", arg.vals[0]))
                     .parse::<i64>()
                     .expect(&format!("Can't convert duration of activity {:?} to i64 number", arg.vals[0]))
+            )
+    }
+
+    fn get_rest(matches: &ArgMatches) -> Option<i64> {
+        matches.args
+            .get(Cmd::REST.upcase_name)
+            .map(|arg|
+                arg.vals[0]
+                    .clone()
+                    .into_string()
+                    .expect(&format!("Can't convert duration of rest {:?} to UTF-8 string", arg.vals[0]))
+                    .parse::<i64>()
+                    .expect(&format!("Can't convert duration of rest {:?} to i64 number", arg.vals[0]))
             )
     }
 
