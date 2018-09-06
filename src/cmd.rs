@@ -196,11 +196,11 @@ impl CmdProcessor {
         let error_message = format!("Can't del record in journal {:?}", self.journal.path());
         let print = self.print;
 
-        if !self.journal.update(&[], Some(offset), |record| {
+        if !self.journal.remove(&[], Some(offset), |record| {
             if print {
                 println!("{}", record.to_string());
             }
-            None
+            true
         }).expect(&error_message) {
             panic!(error_message);
         }
