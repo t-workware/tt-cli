@@ -143,7 +143,7 @@ impl CmdProcessor {
             if let Some(note) = note {
                 record.note = note;
             }
-            record.set_activity_to_now();
+            record.update_activity_to_now();
             record
         });
     }
@@ -154,7 +154,7 @@ impl CmdProcessor {
             if let Some(note) = note {
                 record.note = note;
             }
-            record.set_rest_to_now();
+            record.update_rest_to_now();
             record
         });
     }
