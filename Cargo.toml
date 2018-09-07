@@ -8,7 +8,7 @@ clap = "2.32"
 config = "0.9"
 serde = "1.0"
 serde_derive = "1.0"
-tt-core = { path = "../tt-core" }
+tt-core = { git = "https://github.com/t-workware/tt-core.git" }
 
 [dev-dependencies]
 file_assertions = { git = "https://github.com/XX/file_assertions.git" }

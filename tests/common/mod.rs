@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! target_path {
     ($path:tt) => {
-        &format!("../target/debug/{}", $path)
+        &format!("target/debug/{}", $path)
     };
 }
 

@@ -13,7 +13,7 @@ use tt_core::journal::{Journal, file::FileJournal};
 
 #[test]
 fn stop_record() {
-    let test_dir = &["..", "target", "test_stop"].iter().collect::<PathBuf>();
+    let test_dir = &["target", "test_stop"].iter().collect::<PathBuf>();
     let journal_file = &test_dir.join("journal.txt");
     let config_file = &test_dir.join("tt-cli.toml");
     let config_content = format!("journal_file = {:?}", journal_file.as_os_str());
