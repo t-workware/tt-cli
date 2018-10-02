@@ -5,24 +5,15 @@ extern crate tt_core;
 #[macro_use]
 mod common;
 
-use std::path::PathBuf;
-use std::env;
-
 use tt_core::record::{Record, Duration};
-use tt_core::journal::{Journal, file::FileJournal};
+use tt_core::journal::Journal;
+use common::TestPaths;
 
 #[test]
 fn stop_record() {
-    let test_dir = &["target", "test_stop"].iter().collect::<PathBuf>();
-    let journal_file = &test_dir.join("journal.txt");
-    let config_file = &test_dir.join("tt-cli.toml");
-    let config_content = format!("journal_file = {:?}", journal_file.as_os_str());
-
-    clear_dir!(test_dir);
-    create_file!(config_file, config_content);
-    env::remove_var("TT_CLI_HOME");
-    env::set_var("TT_CLI_CONFIG_FILE_NAME", config_file);
-    let journal = FileJournal::new(journal_file);
+    let test_paths = TestPaths::new("test_stop");
+    let journal = test_paths.init();
+    let journal_file = test_paths.journal_file();
 
     let mut record = Record::now();
     record.start.as_mut().map(|start| *start = *start - Duration::minutes(12));

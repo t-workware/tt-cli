@@ -100,3 +100,57 @@ pub fn split_args(line: &str) -> Vec<String> {
     push_arg(&mut args, &line.as_bytes()[start..]);
     args
 }
+
+use std::path::PathBuf;
+use std::env;
+use tt_core::journal::file::FileJournal;
+
+#[derive(Clone, Default)]
+pub struct TestPaths {
+    test_dir: PathBuf,
+    journal_file: PathBuf,
+    config_file: PathBuf,
+}
+
+impl TestPaths {
+    pub fn new(test_dir_name: &str) -> Self {
+        TestPaths::default()
+            .with_test_dir(&["target", test_dir_name])
+            .with_journal_file("journal.txt")
+            .with_config_file("tt-cli.toml")
+    }
+
+    pub fn with_test_dir(mut self, path: &[&str]) -> Self {
+        self.test_dir = path.iter().collect::<PathBuf>();
+        self
+    }
+
+    pub fn with_journal_file(mut self, file: &str) -> Self {
+        self.journal_file = self.test_dir.join(file);
+        self
+    }
+
+    pub fn with_config_file(mut self, file: &str) -> Self {
+        self.config_file = self.test_dir.join(file);
+        self
+    }
+
+    pub fn paths(&self) -> (&PathBuf, &PathBuf, &PathBuf) {
+        (&self.journal_file, &self.config_file, &self.test_dir)
+    }
+
+    pub fn journal_file(&self) -> &PathBuf {
+        &self.journal_file
+    }
+
+    pub fn init(&self) -> FileJournal {
+        let (journal_file, config_file, test_dir) = self.paths();
+        let config_content = format!("journal_file = {:?}", journal_file.as_os_str());
+
+        clear_dir!(test_dir);
+        create_file!(config_file, config_content);
+        env::remove_var("TT_CLI_HOME");
+        env::set_var("TT_CLI_CONFIG_FILE_NAME", config_file);
+        FileJournal::new(journal_file)
+    }
+}
