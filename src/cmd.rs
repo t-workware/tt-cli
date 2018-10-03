@@ -214,6 +214,8 @@ impl CmdProcessor {
             self.set_date(matches, offset);
         } else if let Some(matches) = matches.subcommand_matches(Cmd::TIME.name) {
             self.set_time(matches, offset);
+        } else if let Some(matches) = matches.subcommand_matches(Cmd::DATETIME.name) {
+            self.set_datetime(matches, offset);
         } else if let Some(matches) = matches.subcommand_matches(Cmd::ACTIVITY.name) {
             self.set_act(matches, offset);
         } else if let Some(matches) = matches.subcommand_matches(Cmd::REST.name) {
@@ -247,6 +249,15 @@ impl CmdProcessor {
     fn set_time(&mut self, matches: &ArgMatches, offset: i32) {
         self.update(offset, |mut record| {
             if let Some(datetime) = Self::get_time(matches, record.start.clone()) {
+                record.start = Some(datetime);
+            }
+            record
+        });
+    }
+
+    fn set_datetime(&mut self, matches: &ArgMatches, offset: i32) {
+        self.update(offset, |mut record| {
+            if let Some(datetime) = Self::get_datetime(matches, record.start.clone()) {
                 record.start = Some(datetime);
             }
             record
@@ -320,42 +331,90 @@ impl CmdProcessor {
     fn get_date(matches: &ArgMatches) -> Option<Date<Local>> {
         matches.args
             .get(Cmd::DATE.upcase_name)
-            .map(|arg| {
-                let arg = arg.vals[0]
+            .map(|arg| Self::parse_date(
+                arg.vals[0]
                     .clone()
                     .into_string()
-                    .expect(&format!("Can't convert date {:?} to UTF-8 string", arg.vals[0]));
-                let now = Local::now();
+                    .expect(&format!("Can't convert date {:?} to UTF-8 string", arg.vals[0]))
+            ))
+    }
 
-                if &arg == "now" {
-                    now.date()
-                } else {
-                    let mut items = arg
-                        .split('-')
-                        .map(|s| s.parse().expect(&format!("Can't convert part of date {:?} to i32", s)))
-                        .collect::<Vec<i32>>();
-                    if items.len() < 1 || items.len() > 3 {
-                        panic!("Can't convert date {:?} to Date<Local>", arg);
-                    }
-                    items.reverse();
+    fn parse_date(text: String) -> Date<Local> {
+        let now = Local::now();
 
-                    let day = items[0] as u32;
-                    let month = if items.len() > 1 {
-                        items[1] as u32
-                    } else {
-                        now.month()
-                    };
-                    let year = if items.len() > 2 {
-                        items[2]
-                    } else {
-                        now.year()
-                    };
-                    Local.ymd(year, month, day)
-                }
-            })
+        if &text == "now" {
+            now.date()
+        } else {
+            let mut items = text
+                .split('-')
+                .map(|s| s.parse().expect(&format!("Can't convert part of date {:?} to i32", s)))
+                .collect::<Vec<i32>>();
+            if items.len() < 1 || items.len() > 3 {
+                panic!("Can't convert date {:?} to Date<Local>", text);
+            }
+            items.reverse();
+
+            let day = items[0] as u32;
+            let month = if items.len() > 1 {
+                items[1] as u32
+            } else {
+                now.month()
+            };
+            let year = if items.len() > 2 {
+                items[2]
+            } else {
+                now.year()
+            };
+            Local.ymd(year, month, day)
+        }
     }
 
     fn get_time(matches: &ArgMatches, initial: Option<DateTime<Local>>) -> Option<DateTime<Local>> {
+        matches.args
+            .get(Cmd::TIME.upcase_name)
+            .map(|arg| Self::parse_time(
+                arg.vals[0]
+                    .clone()
+                    .into_string()
+                    .expect(&format!("Can't convert time {:?} to UTF-8 string", arg.vals[0])),
+                initial
+            ))
+    }
+
+    fn parse_time(text: String, initial: Option<DateTime<Local>>) -> DateTime<Local> {
+        let now = Local::now();
+
+        if &text == "now" {
+            now
+        } else {
+            let items = text
+                .split(':')
+                .map(|s| s.parse().expect(&format!("Can't convert part of time {:?} to u32", s)))
+                .collect::<Vec<u32>>();
+            if items.len() < 1 || items.len() > 3 {
+                panic!("Can't convert time {:?} to DateTime<Local>", text);
+            }
+
+            let mut result = initial.unwrap_or(now);
+            if items.len() > 2 {
+                result = result.with_second(items[2])
+                    .expect(&format!("Can't convert {:?} to second", items[2]));
+            }
+            result = if items.len() > 1 {
+                result
+                    .with_hour(items[0])
+                    .expect(&format!("Can't convert {:?} to hour", items[0]))
+                    .with_minute(items[1])
+                    .expect(&format!("Can't convert {:?} to minute", items[1]))
+            } else {
+                result.with_minute(items[0])
+                    .expect(&format!("Can't convert {:?} to minute", items[0]))
+            };
+            result
+        }
+    }
+
+    fn get_datetime(matches: &ArgMatches, initial: Option<DateTime<Local>>) -> Option<DateTime<Local>> {
         matches.args
             .get(Cmd::TIME.upcase_name)
             .map(|arg| {
@@ -363,36 +422,12 @@ impl CmdProcessor {
                     .clone()
                     .into_string()
                     .expect(&format!("Can't convert time {:?} to UTF-8 string", arg.vals[0]));
-                let now = Local::now();
-
-                if &arg == "now" {
-                    now
-                } else {
-                    let items = arg
-                        .split(':')
-                        .map(|s| s.parse().expect(&format!("Can't convert part of time {:?} to u32", s)))
-                        .collect::<Vec<u32>>();
-                    if items.len() < 1 || items.len() > 3 {
-                        panic!("Can't convert time {:?} to DateTime<Local>", arg);
-                    }
-
-                    let mut result = initial.unwrap_or(now);
-                    if items.len() > 2 {
-                        result = result.with_second(items[2])
-                            .expect(&format!("Can't convert {:?} to second", items[2]));
-                    }
-                    result = if items.len() > 1 {
-                        result
-                            .with_hour(items[0])
-                            .expect(&format!("Can't convert {:?} to hour", items[0]))
-                            .with_minute(items[1])
-                            .expect(&format!("Can't convert {:?} to minute", items[1]))
-                    } else {
-                        result.with_minute(items[0])
-                            .expect(&format!("Can't convert {:?} to minute", items[0]))
-                    };
-                    result
+                let pair = arg.split_whitespace().collect::<Vec<&str>>();
+                if pair.len() != 2 {
+                    panic!("Can't convert set {:?} to DateTime<Local>", pair);
                 }
+                let time = Self::parse_time(pair[1].to_string(), initial);
+                Self::parse_date(pair[0].to_string()).and_hms(time.hour(), time.minute(), time.second())
             })
     }
 
