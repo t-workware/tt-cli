@@ -336,13 +336,48 @@ impl CmdProcessor {
                     .clone()
                     .into_string()
                     .expect(&format!("Can't convert date {:?} to UTF-8 string", arg.vals[0]))
+                    .as_str()
             ))
     }
 
-    fn parse_date(text: String) -> Date<Local> {
+    fn get_time(matches: &ArgMatches, initial: Option<DateTime<Local>>) -> Option<DateTime<Local>> {
+        matches.args
+            .get(Cmd::TIME.upcase_name)
+            .map(|arg| Self::parse_time(
+                arg.vals[0]
+                    .clone()
+                    .into_string()
+                    .expect(&format!("Can't convert time {:?} to UTF-8 string", arg.vals[0]))
+                    .as_str(),
+                initial
+            ))
+    }
+
+    fn get_datetime(matches: &ArgMatches, initial: Option<DateTime<Local>>) -> Option<DateTime<Local>> {
+        matches.args
+            .get(Cmd::DATETIME.upcase_name)
+            .map(|arg| {
+                let pair = arg.vals
+                    .iter()
+                    .map(|val|
+                        val.clone()
+                            .into_string()
+                            .expect(&format!("Can't convert datetime {:?} to UTF-8 string", arg.vals))
+                    )
+                    .collect::<Vec<_>>();
+
+                if pair.len() != 2 {
+                    panic!("Can't convert set {:?} to DateTime<Local>", pair);
+                }
+                let time = Self::parse_time(&pair[1], initial);
+                Self::parse_date(&pair[0]).and_hms(time.hour(), time.minute(), time.second())
+            })
+    }
+
+    fn parse_date(text: &str) -> Date<Local> {
         let now = Local::now();
 
-        if &text == "now" {
+        if text == "now" {
             now.date()
         } else {
             let mut items = text
@@ -369,22 +404,10 @@ impl CmdProcessor {
         }
     }
 
-    fn get_time(matches: &ArgMatches, initial: Option<DateTime<Local>>) -> Option<DateTime<Local>> {
-        matches.args
-            .get(Cmd::TIME.upcase_name)
-            .map(|arg| Self::parse_time(
-                arg.vals[0]
-                    .clone()
-                    .into_string()
-                    .expect(&format!("Can't convert time {:?} to UTF-8 string", arg.vals[0])),
-                initial
-            ))
-    }
-
-    fn parse_time(text: String, initial: Option<DateTime<Local>>) -> DateTime<Local> {
+    fn parse_time(text: &str, initial: Option<DateTime<Local>>) -> DateTime<Local> {
         let now = Local::now();
 
-        if &text == "now" {
+        if text == "now" {
             now
         } else {
             let items = text
@@ -412,23 +435,6 @@ impl CmdProcessor {
             };
             result
         }
-    }
-
-    fn get_datetime(matches: &ArgMatches, initial: Option<DateTime<Local>>) -> Option<DateTime<Local>> {
-        matches.args
-            .get(Cmd::TIME.upcase_name)
-            .map(|arg| {
-                let arg = arg.vals[0]
-                    .clone()
-                    .into_string()
-                    .expect(&format!("Can't convert time {:?} to UTF-8 string", arg.vals[0]));
-                let pair = arg.split_whitespace().collect::<Vec<&str>>();
-                if pair.len() != 2 {
-                    panic!("Can't convert set {:?} to DateTime<Local>", pair);
-                }
-                let time = Self::parse_time(pair[1].to_string(), initial);
-                Self::parse_date(pair[0].to_string()).and_hms(time.hour(), time.minute(), time.second())
-            })
     }
 
     fn get_act(matches: &ArgMatches) -> Option<i64> {
