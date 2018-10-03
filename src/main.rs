@@ -63,6 +63,14 @@ fn main() {
                 .value_name(Cmd::OFFSET.upcase_name)
                 .help(Cmd::OFFSET.desc)
                 .takes_value(true)))
+        .subcommand(SubCommand::with_name(Cmd::REPORT.name)
+            .about(Cmd::REPORT.desc)
+            .arg(Arg::with_name(Cmd::ALL.name)
+                .short(Cmd::ALL.short)
+                .long(Cmd::ALL.name)
+                .help(Cmd::ALL.desc))
+            .arg(Arg::with_name(Cmd::DATE.upcase_name)
+                .help(Cmd::DATE.desc)))
         .subcommand(SubCommand::with_name(Cmd::SET.name)
             .about(Cmd::SET.desc)
             .arg(Arg::with_name(Cmd::OFFSET.name)
@@ -112,5 +120,7 @@ fn main() {
         processor.set(matches);
     } else if let Some(matches) = matches.subcommand_matches(Cmd::DEL.name) {
         processor.del(matches);
+    } else if let Some(matches) = matches.subcommand_matches(Cmd::REPORT.name) {
+        processor.report(matches);
     }
 }

@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use clap::ArgMatches;
 use tt_core::record::{Record, Local, Date, DateTime, Datelike, Timelike, TimeZone, Duration};
 use tt_core::journal::{Journal, file::{FileJournal, Item}};
@@ -45,6 +47,13 @@ impl Cmd {
         name: "del",
         short: "",
         desc: "Remove record"
+    };
+
+    pub const REPORT: Cmd = Cmd {
+        upcase_name: "REPORT",
+        name: "report",
+        short: "r",
+        desc: "Generate and display report"
     };
 
     pub const SET: Cmd = Cmd {
@@ -203,6 +212,67 @@ impl CmdProcessor {
             true
         }).expect(&error_message) {
             panic!(error_message);
+        }
+    }
+
+    pub fn report(&mut self, matches: &ArgMatches) {
+        let date = if !Self::is_all(matches) {
+            Self::get_date(matches).or(Some(Local::now().date()))
+        } else {
+            None
+        };
+        let error_message = format!("Can't report records from journal {:?}", self.journal.path());
+        let mut collection = BTreeMap::new();
+
+        let mut iter = self.journal.try_iter().expect(&error_message);
+        iter.go_to_end();
+        loop {
+            if let Some(item) = iter.backward(1).get() {
+                match item {
+                    Item::Record(r) => {
+                        if date.is_some() && r.start.is_some() {
+                            if r.start.unwrap().date() < date.unwrap() {
+                                break;
+                            }
+                        }
+                        if let Some(act) = r.activity {
+                            let mut act = act.num_minutes();
+                            let key = r.note.clone();
+                            if let Some(exist_act) = collection.get(&key) {
+                                act += *exist_act;
+                            }
+                            collection.insert(key, act);
+                        }
+                    },
+                    Item::SomeLine(_) => (),
+                }
+            } else {
+                break;
+            }
+        }
+        let mut last_node = Option::None::<ReportNode>;
+        for (k, &v) in collection.iter() {
+            let mut words = k.as_str().split_whitespace().collect::<Vec<&str>>();
+            if words.len() < 1 {
+                words.push("");
+            }
+
+            last_node = last_node
+                .and_then(|mut node|
+                    if node.note == words[0] {
+                        node.extend(&words[1..], v);
+                        Some(node)
+                    } else {
+                        node.collapse();
+                        println!("{}", node.to_string());
+                        None
+                    }
+                )
+                .or(Some(ReportNode::new(&words, v)));
+        }
+        if let Some(mut node) = last_node {
+            node.collapse();
+            println!("{}", node.to_string());
         }
     }
 
@@ -465,5 +535,77 @@ impl CmdProcessor {
 
     fn is_all(matches: &ArgMatches) -> bool {
         matches.occurrences_of(Cmd::ALL.name) > 0
+    }
+}
+
+struct ReportNode {
+    pub children: Vec<ReportNode>,
+    pub note: String,
+    pub act: i64,
+}
+
+impl ReportNode {
+    pub fn new(notes: &[&str], act: i64) -> ReportNode {
+        assert!(notes.len() > 0, "Notes slice should not be zero");
+        let note = notes[0].to_string();
+
+        if notes.len() == 1 {
+            ReportNode {
+                children: vec![],
+                note,
+                act,
+            }
+        } else {
+            let child = ReportNode::new(&notes[1..], act);
+            ReportNode {
+                children: vec![child],
+                note,
+                act,
+            }
+        }
+    }
+
+    pub fn is_leaf(&self) -> bool {
+        self.children.is_empty()
+    }
+
+    pub fn extend(&mut self, notes: &[&str], act: i64) {
+        self.act += act;
+        if notes.len() > 0 {
+            for child in self.children.iter_mut() {
+                if &child.note == notes[0] {
+                    child.extend(&notes[1..], act);
+                    return;
+                }
+            }
+            self.children.push(ReportNode::new(notes, act));
+        }
+    }
+
+    pub fn collapse(&mut self) {
+        for child in self.children.iter_mut() {
+            if !child.is_leaf() {
+                child.collapse();
+            }
+        }
+        if self.children.len() == 1 && self.act == self.children[0].act {
+            self.note = format!("{} {}", self.note, self.children[0].note);
+            self.children = ::std::mem::replace(&mut self.children[0].children, Vec::new());
+        }
+    }
+
+    fn to_string_producer(&self, prefix: &str) -> String {
+        let mut string = format!("{}{}  {}", prefix, self.act, self.note);
+        let prefix = format!("{}  ", prefix);
+        for child in self.children.iter() {
+            string = format!("{}\n{}", string, child.to_string_producer(&prefix));
+        }
+        string
+    }
+}
+
+impl ToString for ReportNode {
+    fn to_string(&self) -> String {
+        self.to_string_producer("")
     }
 }
