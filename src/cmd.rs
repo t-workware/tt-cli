@@ -1,5 +1,5 @@
 use clap::ArgMatches;
-use tt_core::record::{Record, Local, Date, Datelike, Timelike, TimeZone, Duration};
+use tt_core::record::{Record, Local, Date, DateTime, Datelike, Timelike, TimeZone, Duration};
 use tt_core::journal::{Journal, file::{FileJournal, Item}};
 use settings::Settings;
 
@@ -212,6 +212,8 @@ impl CmdProcessor {
             self.set_note(matches, offset);
         } else if let Some(matches) = matches.subcommand_matches(Cmd::DATE.name) {
             self.set_date(matches, offset);
+        } else if let Some(matches) = matches.subcommand_matches(Cmd::TIME.name) {
+            self.set_time(matches, offset);
         } else if let Some(matches) = matches.subcommand_matches(Cmd::ACTIVITY.name) {
             self.set_act(matches, offset);
         } else if let Some(matches) = matches.subcommand_matches(Cmd::REST.name) {
@@ -237,6 +239,15 @@ impl CmdProcessor {
                 let min = record.start.map(|dt| dt.minute()).unwrap_or(0);
                 let sec = record.start.map(|dt| dt.second()).unwrap_or(0);
                 record.start = Some(date.and_hms(hour, min, sec));
+            }
+            record
+        });
+    }
+
+    fn set_time(&mut self, matches: &ArgMatches, offset: i32) {
+        self.update(offset, |mut record| {
+            if let Some(datetime) = Self::get_time(matches, record.start.clone()) {
+                record.start = Some(datetime);
             }
             record
         });
@@ -316,10 +327,10 @@ impl CmdProcessor {
                     .expect(&format!("Can't convert date {:?} to UTF-8 string", arg.vals[0]));
                 let now = Local::now();
 
-                if  &arg == "now" {
+                if &arg == "now" {
                     now.date()
                 } else {
-                    let mut items: Vec<i32> = arg
+                    let mut items = arg
                         .split('-')
                         .map(|s| s.parse().expect(&format!("Can't convert part of date {:?} to i32", s)))
                         .collect::<Vec<i32>>();
@@ -340,6 +351,47 @@ impl CmdProcessor {
                         now.year()
                     };
                     Local.ymd(year, month, day)
+                }
+            })
+    }
+
+    fn get_time(matches: &ArgMatches, initial: Option<DateTime<Local>>) -> Option<DateTime<Local>> {
+        matches.args
+            .get(Cmd::TIME.upcase_name)
+            .map(|arg| {
+                let arg = arg.vals[0]
+                    .clone()
+                    .into_string()
+                    .expect(&format!("Can't convert time {:?} to UTF-8 string", arg.vals[0]));
+                let now = Local::now();
+
+                if &arg == "now" {
+                    now
+                } else {
+                    let items = arg
+                        .split(':')
+                        .map(|s| s.parse().expect(&format!("Can't convert part of time {:?} to u32", s)))
+                        .collect::<Vec<u32>>();
+                    if items.len() < 1 || items.len() > 3 {
+                        panic!("Can't convert time {:?} to DateTime<Local>", arg);
+                    }
+
+                    let mut result = initial.unwrap_or(now);
+                    if items.len() > 2 {
+                        result = result.with_second(items[2])
+                            .expect(&format!("Can't convert {:?} to second", items[2]));
+                    }
+                    result = if items.len() > 1 {
+                        result
+                            .with_hour(items[0])
+                            .expect(&format!("Can't convert {:?} to hour", items[0]))
+                            .with_minute(items[1])
+                            .expect(&format!("Can't convert {:?} to minute", items[1]))
+                    } else {
+                        result.with_minute(items[0])
+                            .expect(&format!("Can't convert {:?} to minute", items[0]))
+                    };
+                    result
                 }
             })
     }
