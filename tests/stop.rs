@@ -19,40 +19,40 @@ fn stop_record() {
     record.start.as_mut().map(|start| *start = *start - Duration::minutes(12));
     let start = record.start.unwrap().format(Record::START_DATETIME_FORMAT);
 
-    let content = format!("[{},  ()]", start);
+    let content = format!("[{}, ]", start);
     create_file!(journal_file, content);
 
     run!("tt-cli stop record1");
-    let expected = format!("[{}, 12 ()] record1\n", start);
+    let expected = format!("[{}, 12] record1\n", start);
     assert_content!(journal_file, expected);
 
-    let content = format!("[{}, 12 ()] record1\n[{},  ()]\n", start, start);
+    let content = format!("[{}, 12] record1\n[{}, ]\n", start, start);
     create_file!(journal_file, content);
 
     run!("tt-cli stop record 2");
-    let expected = format!("[{}, 12 ()] record1\n[{}, 12 ()] record 2\n", start, start);
+    let expected = format!("[{}, 12] record1\n[{}, 12] record 2\n", start, start);
     assert_content!(journal_file, expected);
 
-    let content = format!("[{}, 12 ()] record1\n[{}, 12 ()] record 2\n[{},  ()] record 3\n", start, start, start);
+    let content = format!("[{}, 12] record1\n[{}, 12] record 2\n[{}, ] record 3\n", start, start, start);
     create_file!(journal_file, content);
 
     run!("tt-cli stop");
-    let expected = format!("[{}, 12 ()] record1\n[{}, 12 ()] record 2\n[{}, 12 ()] record 3\n", start, start, start);
+    let expected = format!("[{}, 12] record1\n[{}, 12] record 2\n[{}, 12] record 3\n", start, start, start);
     assert_content!(journal_file, expected);
 
-    let content = format!("[{},  ()] \n[{},  ()]\n[{},  ()]\n", start, start, start);
+    let content = format!("[{}, ] \n[{}, ]\n[{}, ]\n", start, start, start);
     create_file!(journal_file, content);
 
     run!("tt-cli stop -n 2 record1");
-    let expected = format!("[{}, 12 ()] record1\n[{},  ()]\n[{},  ()]\n", start, start, start);
+    let expected = format!("[{}, 12] record1\n[{}, ]\n[{}, ]\n", start, start, start);
     assert_content!(journal_file, expected);
 
     run!("tt-cli stop -n 1");
-    let expected = format!("[{}, 12 ()] record1\n[{}, 12 ()]\n[{},  ()]\n", start, start, start);
+    let expected = format!("[{}, 12] record1\n[{}, 12]\n[{}, ]\n", start, start, start);
     assert_content!(journal_file, expected);
 
     run!("tt-cli stop -n 0 record 3");
-    let expected = format!("[{}, 12 ()] record1\n[{}, 12 ()]\n[{}, 12 ()] record 3\n", start, start, start);
+    let expected = format!("[{}, 12] record1\n[{}, 12]\n[{}, 12] record 3\n", start, start, start);
     assert_content!(journal_file, expected);
 
     let first_record = journal.get(&[], None)

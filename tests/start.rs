@@ -22,7 +22,7 @@ fn start_record() {
         .expect(&format!("The record in {:?} is empty", journal_file));
     assert!(record.start.is_some());
     let expected = format!(
-        "[{},  ()] record1\n",
+        "[{}, ] record1\n",
         record.start.unwrap().format(Record::START_DATETIME_FORMAT)
     );
     assert_content!(journal_file, expected);
@@ -34,7 +34,7 @@ fn start_record() {
         .expect(&format!("The record in {:?} is empty", journal_file));
     assert!(record2.start.is_some());
     let expected = format!(
-        "[{},  ()] record1\n[{},  ()] record 2\n",
+        "[{}, ] record1\n[{}, ] record 2\n",
         record.start.unwrap().format(Record::START_DATETIME_FORMAT),
         record2.start.unwrap().format(Record::START_DATETIME_FORMAT)
     );
@@ -47,7 +47,7 @@ fn start_record() {
         .expect(&format!("The record in {:?} is empty", journal_file));
     assert!(record3.start.is_some());
     let expected = format!(
-        "[{},  ()] record1\n[{},  ()] record 2\n[{},  ()] record 3\n",
+        "[{}, ] record1\n[{}, ] record 2\n[{}, ] record 3\n",
         record.start.unwrap().format(Record::START_DATETIME_FORMAT),
         record2.start.unwrap().format(Record::START_DATETIME_FORMAT),
         record3.start.unwrap().format(Record::START_DATETIME_FORMAT)
