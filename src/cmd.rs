@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::fmt::Display;
 
 use clap::ArgMatches;
 use tt_core::record::{Record, Local, Date, DateTime, Datelike, Timelike, TimeZone, Duration};
@@ -224,6 +225,7 @@ impl CmdProcessor {
         let error_message = format!("Can't report records from journal {:?}", self.journal.path());
         let mut collection = BTreeMap::new();
 
+        let mut total = 0;
         let mut iter = self.journal.try_iter().expect(&error_message);
         iter.go_to_end();
         loop {
@@ -237,6 +239,8 @@ impl CmdProcessor {
                         }
                         if let Some(act) = r.activity {
                             let mut act = act.num_minutes();
+                            total += act;
+
                             let key = r.note.clone();
                             if let Some(exist_act) = collection.get(&key) {
                                 act += *exist_act;
@@ -250,6 +254,7 @@ impl CmdProcessor {
                 break;
             }
         }
+
         let mut last_node = Option::None::<ReportNode>;
         for (k, &v) in collection.iter() {
             let mut words = k.as_str().split_whitespace().collect::<Vec<&str>>();
@@ -274,6 +279,7 @@ impl CmdProcessor {
             node.collapse();
             println!("{}", node.to_string());
         }
+        Self::print_total(total);
     }
 
     pub fn set(&mut self, matches: &ArgMatches) {
@@ -535,6 +541,13 @@ impl CmdProcessor {
 
     fn is_all(matches: &ArgMatches) -> bool {
         matches.occurrences_of(Cmd::ALL.name) > 0
+    }
+
+    fn print_total<T: Display>(total: T) {
+        let places = format!("{}", total).chars().count();
+        let dashes = String::from_utf8(vec![b'-'; 7 + places]).expect("Can't produce dash line");
+        println!("{}", dashes);
+        println!("Total: {}", total);
     }
 }
 

@@ -25,6 +25,8 @@ $ tt report
   15  task1
   52  task2
 17  Some work
+---------
+Total: 84
 ```
 
 ## Installation
@@ -136,13 +138,17 @@ $ tt restart -n 1 New last but one restarted note
 5. List records:
 ```
 $ tt list
-$ tt list 2018-10-10
+$ tt list 2018-12-01
+$ tt list 12-01
+$ tt list 01
 ```
 
 6. Generate and show report:
 ```
 $ tt report
-$ tt report 2018-10-10
+$ tt report 2018-12-01
+$ tt report 12-01
+$ tt report 01
 ```
 
 7. Setup record attributes:
@@ -150,7 +156,7 @@ $ tt report 2018-10-10
 $ tt set note New last record note
 $ tt set act 45
 $ tt set rest 5
-$ tt set date 2018-10
+$ tt set date 2018-12-03
 $ tt set time 12:25
 $ tt set -n 2 note New some record note
 ```
