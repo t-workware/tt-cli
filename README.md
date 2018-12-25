@@ -4,10 +4,10 @@ This is a time tracking console tool. Usage example:
 
 ```
 $ tt start
-[2018-10-11 18:34:56,  ()]
+[2018-10-11 18:34:56, ]
 
 $ tt stop Day work task2
-[2018-10-11 18:34:56, 45 ()] Day work task2
+[2018-10-11 18:34:56, 45] Day work task2
 
 $ tt restart
 [2018-10-11 18:34:56, 45 (5)] Day work task2
@@ -16,8 +16,8 @@ $ tt stop
 [2018-10-11 18:34:56, 52 (5)] Day work task2
 
 $ tt list
-[2018-10-11 10:21:13, 17 ()] Some work
-[2018-10-11 13:48:02, 15 ()] Day work task1
+[2018-10-11 10:21:13, 17] Some work
+[2018-10-11 13:48:02, 15] Day work task1
 [2018-10-11 18:34:56, 52 (5)] Day work task2
 
 $ tt report
