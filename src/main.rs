@@ -12,7 +12,7 @@ use clap::{App, Arg, SubCommand};
 use cmd::{Cmd, CmdProcessor};
 use settings::Settings;
 
-const VERSION: &'static str = "0.6.0"; // Related with `version` value in Cargo.toml
+const VERSION: &'static str = "0.6.0"; // Same as `version` value in Cargo.toml
 
 fn main() {
     let settings = Settings::new().expect("Read settings error");
