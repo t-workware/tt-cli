@@ -3,6 +3,11 @@ name = "tt-cli"
 version = "0.6.0" # Same as `VERSION` const in src/main.rs
 authors = ["XX <freecoder.xx@gmail.com>"]
 
+[profile.release]
+opt-level = 'z'
+lto = true
+codegen-units = 1
+
 [dependencies]
 clap = "2.32"
 config = "0.9"
