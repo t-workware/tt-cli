@@ -75,14 +75,14 @@ impl Cmd {
         upcase_name: "DATE",
         name: "date",
         short: "",
-        desc: "The record start date, for example: \"2018-08-25\""
+        desc: "The record start date, for example: \"2018-08-25\", \"08-25\", \"25\", \"now\""
     };
 
     pub const TIME: Cmd = Cmd {
         upcase_name: "TIME",
         name: "time",
         short: "",
-        desc: "The record start time, for example: \"14:09:21\""
+        desc: "The record start time, for example: \"14:09:21\", \"14:09\", \"9\", \"now\""
     };
 
     pub const DATETIME: Cmd = Cmd {
@@ -104,6 +104,20 @@ impl Cmd {
         name: "rest",
         short: "",
         desc: "The record duration of rest in minutes"
+    };
+
+    pub const HOURS: Cmd = Cmd {
+        upcase_name: "HOURS",
+        name: "hours",
+        short: "H",
+        desc: "Calculate in hours"
+    };
+
+    pub const ROOT: Cmd = Cmd {
+        upcase_name: "ROOT",
+        name: "root",
+        short: "R",
+        desc: "Consider only root items"
     };
 
     pub const ALL: Cmd = Cmd {
@@ -255,6 +269,9 @@ impl CmdProcessor {
             }
         }
 
+        let print_in_hours = Self::is_in_hours(matches);
+        let print_root_items_only= Self::is_root_items_only(matches);
+
         let mut last_node = Option::None::<ReportNode>;
         for (k, &v) in collection.iter() {
             let mut words = k.as_str().split_whitespace().collect::<Vec<&str>>();
@@ -269,17 +286,22 @@ impl CmdProcessor {
                         Some(node)
                     } else {
                         node.collapse();
-                        println!("{}", node.to_string());
+                        println!("{}", node.to_string(print_in_hours, print_root_items_only));
                         None
                     }
                 )
                 .or(Some(ReportNode::new(&words, v)));
         }
+
         if let Some(mut node) = last_node {
             node.collapse();
-            println!("{}", node.to_string());
+            println!("{}", node.to_string(print_in_hours, print_root_items_only));
         }
-        Self::print_total(total);
+        if print_in_hours {
+            Self::print_total(format!("{}:{:02}", total / 60, total % 60));
+        } else {
+            Self::print_total(total);
+        }
     }
 
     pub fn set(&mut self, matches: &ArgMatches) {
@@ -543,6 +565,14 @@ impl CmdProcessor {
         matches.occurrences_of(Cmd::ALL.name) > 0
     }
 
+    fn is_in_hours(matches: &ArgMatches) -> bool {
+        matches.occurrences_of(Cmd::HOURS.name) > 0
+    }
+
+    fn is_root_items_only(matches: &ArgMatches) -> bool {
+        matches.occurrences_of(Cmd::ROOT.name) > 0
+    }
+
     fn print_total<T: Display>(total: T) {
         let places = format!("{}", total).chars().count();
         let dashes = String::from_utf8(vec![b'-'; 7 + places]).expect("Can't produce dash line");
@@ -562,19 +592,14 @@ impl ReportNode {
         assert!(notes.len() > 0, "Notes slice should not be zero");
         let note = notes[0].to_string();
 
-        if notes.len() == 1 {
-            ReportNode {
-                children: vec![],
-                note,
-                act,
-            }
-        } else {
-            let child = ReportNode::new(&notes[1..], act);
-            ReportNode {
-                children: vec![child],
-                note,
-                act,
-            }
+        let mut children = vec![];
+        if notes.len() > 1 {
+            children.push(ReportNode::new(&notes[1..], act));
+        }
+        ReportNode {
+            children,
+            note,
+            act,
         }
     }
 
@@ -607,18 +632,22 @@ impl ReportNode {
         }
     }
 
-    fn to_string_producer(&self, prefix: &str) -> String {
-        let mut string = format!("{}{}  {}", prefix, self.act, self.note);
-        let prefix = format!("{}  ", prefix);
-        for child in self.children.iter() {
-            string = format!("{}\n{}", string, child.to_string_producer(&prefix));
+    pub fn to_string(&self, display_in_hours: bool, root_items_only: bool) -> String {
+        self.to_string_producer("", display_in_hours, root_items_only)
+    }
+
+    fn to_string_producer(&self, prefix: &str, display_in_hours: bool, root_items_only: bool) -> String {
+        let mut string = if display_in_hours {
+            format!("{}{}:{:02}  {}", prefix, self.act / 60, self.act % 60, self.note)
+        } else {
+            format!("{}{}  {}", prefix, self.act, self.note)
+        };
+        if !root_items_only {
+            let prefix = format!("{}  ", prefix);
+            for child in self.children.iter() {
+                string = format!("{}\n{}", string, child.to_string_producer(&prefix, display_in_hours, root_items_only));
+            }
         }
         string
-    }
-}
-
-impl ToString for ReportNode {
-    fn to_string(&self) -> String {
-        self.to_string_producer("")
     }
 }
