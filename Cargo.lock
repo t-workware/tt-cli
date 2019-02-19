@@ -431,7 +431,7 @@ dependencies = [
 [[package]]
 name = "tt-core"
 version = "0.6.0"
-source = "git+https://github.com/t-workware/tt-core.git#5caed2326e9178a09b90952e7712a6669738a662"
+source = "git+https://github.com/t-workware/tt-core.git#9c1e5fbfe1beb51730552bb285d78182f4c776f4"
 dependencies = [
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
