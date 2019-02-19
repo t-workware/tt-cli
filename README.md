@@ -41,10 +41,10 @@ $ cd tt-cli
 $ cargo build --release
 ```
 
-The binary will be available in the `target/release` directory. To link executable to `/usr/bin`, run the following:
+The binary will be available in the `target/release` directory. To copy executable to `/usr/bin`, run the following:
 
 ```
-$ sudo ln -s `pwd`/target/release/tt-cli /usr/bin/tt
+$ sudo cp target/release/tt-cli /usr/bin/tt
 ```
 
 The tool requires a config file with name `tt-cli.toml`, located in TT_CLI_HOME directory. You need to set this environment variable too:
@@ -75,6 +75,8 @@ To update, run following commands in the `tt-cli` local repository folder:
 ```
 $ git pull origin master
 $ cargo build --release
+$ sudo rm /usr/bin/tt
+$ sudo cp target/release/tt-cli /usr/bin/tt
 ```
 
 ## Usage
