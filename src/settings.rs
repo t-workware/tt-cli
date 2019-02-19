@@ -1,6 +1,6 @@
 use std::env;
 use std::path::PathBuf;
-use serde_derive::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize};
 use config::{Config, ConfigError, Environment, File};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

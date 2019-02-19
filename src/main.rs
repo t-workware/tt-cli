@@ -1,16 +1,9 @@
-extern crate clap;
-extern crate config;
-extern crate serde;
-extern crate serde_derive;
-extern crate tt_core;
-
 mod cmd;
 mod settings;
 
 use clap::{App, Arg, SubCommand};
-
-use cmd::{Cmd, CmdProcessor};
-use settings::Settings;
+use crate::cmd::{Cmd, CmdProcessor};
+use crate::settings::Settings;
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 

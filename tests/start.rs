@@ -1,13 +1,10 @@
 #[macro_use]
-extern crate file_assertions;
-extern crate tt_core;
-
-#[macro_use]
 mod common;
 
+use file_assertions::{assert_content};
 use tt_core::record::Record;
 use tt_core::journal::Journal;
-use common::TestPaths;
+use crate::common::TestPaths;
 
 #[test]
 fn start_record() {

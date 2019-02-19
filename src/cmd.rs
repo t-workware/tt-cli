@@ -1,10 +1,9 @@
 use std::collections::BTreeMap;
 use std::fmt::Display;
-
 use clap::ArgMatches;
 use tt_core::record::{Record, Local, Date, DateTime, Datelike, Timelike, TimeZone, Duration};
 use tt_core::journal::{Journal, file::{FileJournal, Item}};
-use settings::Settings;
+use crate::settings::Settings;
 
 #[derive(Default)]
 pub struct Cmd {

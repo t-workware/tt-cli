@@ -10,9 +10,9 @@ macro_rules! run {
     ($($command:tt),*) => {
         $(
             {
-                use ::std::process::Command;
+                use std::process::Command;
 
-                let args = ::common::split_args($command);
+                let args = crate::common::split_args($command);
 
                 let cmd = &args[0];
                 let mut cmd = Command::new(target_path!(cmd));
@@ -39,9 +39,9 @@ macro_rules! assert_output {
     ($($command:tt => $out:tt),*) => {
         $(
             {
-                use ::std::process::Command;
+                use std::process::Command;
 
-                let args = ::common::split_args($command);
+                let args = crate::common::split_args($command);
                 let cmd = &args[0];
                 let mut cmd = Command::new(target_path!(cmd));
                 for arg in args[1..].iter() {
@@ -103,6 +103,7 @@ pub fn split_args(line: &str) -> Vec<String> {
 
 use std::path::PathBuf;
 use std::env;
+use file_assertions::{clear_dir, create_file};
 use tt_core::journal::file::FileJournal;
 
 #[derive(Clone, Default)]
