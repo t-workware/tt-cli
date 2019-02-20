@@ -1,4 +1,5 @@
 mod cmd;
+mod report;
 mod settings;
 
 use clap::{App, Arg, SubCommand};
